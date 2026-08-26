@@ -1,0 +1,126 @@
+{
+  "n_train": 9000,
+  "n_test": 3000,
+  "isolation_forest": {
+    "roc_auc_attack": 0.8711,
+    "avg_precision_attack": 0.8269,
+    "anomaly_rate_on_test": 0.2733
+  },
+  "random_forest": {
+    "roc_auc_attack": 1.0,
+    "avg_precision_attack": 1.0,
+    "macro_f1": 1.0,
+    "weighted_f1": 1.0,
+    "per_class": {
+      "benign": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 2160
+      },
+      "probe": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 300
+      },
+      "dos": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 300
+      },
+      "r2l": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 150
+      },
+      "u2r": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 90
+      }
+    },
+    "confusion_matrix": [
+      [
+        2160,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        300,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        300,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        150,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        90
+      ]
+    ]
+  },
+  "feature_importance_top10": [
+    {
+      "feature": "num_failed_logins",
+      "importance": 0.1298
+    },
+    {
+      "feature": "num_compromised",
+      "importance": 0.087
+    },
+    {
+      "feature": "hot",
+      "importance": 0.0775
+    },
+    {
+      "feature": "srv_count",
+      "importance": 0.0675
+    },
+    {
+      "feature": "serror_rate",
+      "importance": 0.0588
+    },
+    {
+      "feature": "same_srv_rate",
+      "importance": 0.0555
+    },
+    {
+      "feature": "dst_bytes",
+      "importance": 0.0551
+    },
+    {
+      "feature": "count",
+      "importance": 0.0546
+    },
+    {
+      "feature": "src_bytes",
+      "importance": 0.0545
+    },
+    {
+      "feature": "srv_serror_rate",
+      "importance": 0.049
+    }
+  ]
+}

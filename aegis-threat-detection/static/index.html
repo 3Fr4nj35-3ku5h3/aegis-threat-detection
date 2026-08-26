@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aegis · AI Threat Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #070b14;
+      --surface: #0d1424;
+      --surface2: #121a2e;
+      --border: rgba(148,163,184,.12);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --cyan: #22d3ee;
+      --emerald: #34d399;
+      --amber: #fbbf24;
+      --rose: #f43f5e;
+      --violet: #a78bfa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 70% 40% at 20% -10%, rgba(34,211,238,.09), transparent),
+        radial-gradient(ellipse 50% 30% at 90% 100%, rgba(167,139,250,.07), transparent);
+      pointer-events: none; z-index: 0;
+    }
+    .app { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 1.75rem 1.25rem 3rem; }
+
+    header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.75rem; }
+    .brand h1 { font-size: 1.55rem; font-weight: 700; letter-spacing: -.03em; }
+    .brand h1 span { background: linear-gradient(135deg, var(--cyan), var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .brand p { color: var(--muted); font-size: .9rem; margin-top: .25rem; max-width: 420px; }
+    .status {
+      display: inline-flex; align-items: center; gap: .45rem;
+      font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+      padding: .4rem .75rem; border-radius: 999px;
+      background: rgba(52,211,153,.1); border: 1px solid rgba(52,211,153,.3); color: var(--emerald);
+    }
+    .status.down { background: rgba(244,63,94,.1); border-color: rgba(244,63,94,.3); color: var(--rose); }
+    .status .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+    .card h2 {
+      font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: .9rem;
+    }
+
+    .samples { display: flex; flex-direction: column; gap: .5rem; }
+    .sample-btn {
+      text-align: left; width: 100%;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: .75rem .9rem; color: var(--text);
+      cursor: pointer; font-family: inherit; transition: border-color .15s, background .15s;
+    }
+    .sample-btn:hover { border-color: rgba(34,211,238,.4); background: rgba(34,211,238,.06); }
+    .sample-btn strong { display: block; font-size: .9rem; margin-bottom: .15rem; }
+    .sample-btn span { font-size: .75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+    .result-empty { color: var(--muted); font-size: .9rem; padding: 1.5rem 0; text-align: center; }
+
+    .risk-hero {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 1rem; border-radius: 12px; margin-bottom: 1rem;
+      background: var(--surface2); border: 1px solid var(--border);
+    }
+    .risk-hero.low { border-color: rgba(52,211,153,.35); }
+    .risk-hero.medium { border-color: rgba(251,191,36,.35); }
+    .risk-hero.high { border-color: rgba(244,63,94,.35); }
+    .risk-hero.critical { border-color: rgba(244,63,94,.55); background: rgba(244,63,94,.08); }
+    .risk-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem; font-weight: 700; line-height: 1;
+    }
+    .risk-level {
+      font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      margin-top: .35rem;
+    }
+    .meta { text-align: right; font-size: .85rem; color: var(--muted); }
+    .meta strong { color: var(--text); display: block; font-size: 1rem; }
+
+    .bars { display: flex; flex-direction: column; gap: .55rem; margin-bottom: 1rem; }
+    .bar-row { display: grid; grid-template-columns: 70px 1fr 48px; gap: .5rem; align-items: center; font-size: .8rem; }
+    .bar-row span:first-child { color: var(--muted); text-transform: uppercase; font-size: .68rem; letter-spacing: .04em; }
+    .bar-track { height: 8px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--cyan), var(--violet)); transition: width .4s ease; }
+    .bar-row span:last-child { font-family: 'JetBrains Mono', monospace; text-align: right; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .chip {
+      font-size: .75rem; padding: .3rem .55rem; border-radius: 6px;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .chip.on { color: var(--amber); border-color: rgba(251,191,36,.35); }
+
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .65rem;
+    }
+    .metric {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+      padding: .85rem; text-align: center;
+    }
+    .metric .v { font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; color: var(--cyan); }
+    .metric .l { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: .25rem; }
+
+    .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .btn {
+      font-family: inherit; font-size: .85rem; font-weight: 600;
+      padding: .55rem 1rem; border-radius: 9px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+      transition: .15s;
+    }
+    .btn:hover { border-color: rgba(34,211,238,.4); color: var(--cyan); }
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(34,211,238,.18), rgba(167,139,250,.12));
+      border-color: rgba(34,211,238,.35); color: var(--cyan);
+    }
+
+    footer {
+      margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--border);
+      font-size: .78rem; color: var(--muted); text-align: center;
+    }
+    footer a { color: var(--cyan); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <h1>Aegis <span>Threat Detection</span></h1>
+        <p>Hybrid AI scoring: Isolation Forest anomaly detection + Random Forest attack classification on network-flow features.</p>
+      </div>
+      <div class="status" id="health"><span class="dot"></span> Checking…</div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Demo scenarios</h2>
+        <div class="samples" id="samples">Loading samples…</div>
+        <div class="actions">
+          <button class="btn btn-primary" id="runBtn" disabled>Score selected</button>
+          <button class="btn" id="clearBtn">Clear result</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Detection result</h2>
+        <div id="result"><div class="result-empty">Select a scenario and run scoring.</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <h2>Model performance (held-out test)</h2>
+      <div class="metrics-grid" id="metrics">
+        <div class="metric"><div class="v">—</div><div class="l">Train models first</div></div>
+      </div>
+    </div>
+
+    <footer>
+      Aegis v1.0 · Built by <a href="https://3fr4nj35-3ku5h3.github.io/francis-kuria.github.io/" target="_blank" rel="noopener">Francis Kuria</a>
+      · Authorized security research &amp; education only ·
+      <a href="https://github.com/3Fr4nj35-3ku5h3" target="_blank" rel="noopener">GitHub</a>
+    </footer>
+  </div>
+
+  <script>
+    let samples = [];
+    let selected = null;
+
+    const healthEl = document.getElementById('health');
+    const samplesEl = document.getElementById('samples');
+    const resultEl = document.getElementById('result');
+    const metricsEl = document.getElementById('metrics');
+    const runBtn = document.getElementById('runBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    async function init() {
+      try {
+        const h = await fetch('/api/health').then(r => r.json());
+        if (h.models_ready) {
+          healthEl.className = 'status';
+          healthEl.innerHTML = '<span class="dot"></span> Models online';
+        } else {
+          healthEl.className = 'status down';
+          healthEl.innerHTML = '<span class="dot"></span> Models missing';
+        }
+      } catch {
+        healthEl.className = 'status down';
+        healthEl.innerHTML = '<span class="dot"></span> API offline';
+      }
+
+      try {
+        const data = await fetch('/api/demo-samples').then(r => r.json());
+        samples = data.samples || [];
+        renderSamples();
+      } catch {
+        samplesEl.textContent = 'Could not load samples.';
+      }
+
+      try {
+        const m = await fetch('/api/metrics').then(r => r.json());
+        renderMetrics(m);
+      } catch { /* optional */ }
+    }
+
+    function renderSamples() {
+      samplesEl.innerHTML = samples.map((s, i) => `
+        <button type="button" class="sample-btn" data-i="${i}">
+          <strong>${s.name}</strong>
+          <span>expected · ${s.expected}</span>
+        </button>
+      `).join('');
+      samplesEl.querySelectorAll('.sample-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selected = samples[+btn.dataset.i];
+          samplesEl.querySelectorAll('.sample-btn').forEach(b => b.style.borderColor = '');
+          btn.style.borderColor = 'rgba(34,211,238,.55)';
+          runBtn.disabled = false;
+        });
+      });
+    }
+
+    function renderMetrics(m) {
+      const iso = m.isolation_forest || {};
+      const rf = m.random_forest || {};
+      metricsEl.innerHTML = `
+        <div class="metric"><div class="v">${iso.roc_auc_attack ?? '—'}</div><div class="l">IF ROC-AUC</div></div>
+        <div class="metric"><div class="v">${rf.roc_auc_attack ?? '—'}</div><div class="l">RF ROC-AUC</div></div>
+        <div class="metric"><div class="v">${rf.macro_f1 ?? '—'}</div><div class="l">Macro F1</div></div>
+        <div class="metric"><div class="v">${rf.weighted_f1 ?? '—'}</div><div class="l">Weighted F1</div></div>
+        <div class="metric"><div class="v">${m.n_train ?? '—'}</div><div class="l">Train rows</div></div>
+        <div class="metric"><div class="v">${m.n_test ?? '—'}</div><div class="l">Test rows</div></div>
+      `;
+    }
+
+    runBtn.addEventListener('click', async () => {
+      if (!selected) return;
+      runBtn.disabled = true;
+      runBtn.textContent = 'Scoring…';
+      try {
+        const res = await fetch('/api/score/one', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ flow: selected.flow }),
+        }).then(r => r.json());
+        renderResult(res, selected);
+      } catch (e) {
+        resultEl.innerHTML = `<div class="result-empty">Score failed — is the API running?</div>`;
+      }
+      runBtn.disabled = false;
+      runBtn.textContent = 'Score selected';
+    });
+
+    clearBtn.addEventListener('click', () => {
+      resultEl.innerHTML = '<div class="result-empty">Select a scenario and run scoring.</div>';
+      selected = null;
+      runBtn.disabled = true;
+      samplesEl.querySelectorAll('.sample-btn').forEach(b => b.style.borderColor = '');
+    });
+
+    function renderResult(r, sample) {
+      const level = r.risk_level || 'low';
+      const probs = r.class_probabilities || {};
+      const bars = Object.entries(probs)
+        .sort((a, b) => b[1] - a[1])
+        .map(([k, v]) => `
+          <div class="bar-row">
+            <span>${k}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${(v * 100).toFixed(1)}%"></div></div>
+            <span>${(v * 100).toFixed(1)}%</span>
+          </div>
+        `).join('');
+
+      resultEl.innerHTML = `
+        <div class="risk-hero ${level}">
+          <div>
+            <div class="risk-score">${(r.risk_score * 100).toFixed(0)}</div>
+            <div class="risk-level" style="color:inherit">${level} risk</div>
+          </div>
+          <div class="meta">
+            <strong>${r.predicted_class}</strong>
+            Scenario: ${sample.name}<br/>
+            Attack p: ${(r.attack_probability * 100).toFixed(1)}%
+          </div>
+        </div>
+        <h2 style="margin-bottom:.6rem">Class probabilities</h2>
+        <div class="bars">${bars}</div>
+        <div class="chips">
+          <span class="chip ${r.anomaly_flag ? 'on' : ''}">anomaly ${r.anomaly_flag ? 'FLAGGED' : 'clear'}</span>
+          <span class="chip">anomaly score ${r.anomaly_score}</span>
+          <span class="chip">expected ${sample.expected}</span>
+        </div>
+      `;
+    }
+
+    init();
+  </script>
+</body>
+</html>
