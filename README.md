@@ -1,138 +1,88 @@
-# Aegis — AI-Assisted Threat Detection
+# Aegis Console
 
-**Hybrid network-flow threat detection:** unsupervised anomaly scoring + supervised attack classification, with a live dashboard and REST API.
+**AI-assisted network flow triage for security analysts.**
 
-Built as a **portfolio-grade, reproducible** security ML system — transparent metrics, honest scope, runnable in minutes.
+Aegis is a **decision-support product**, not a toy demo. It scores network-flow style records, explains the result, and recommends human next steps. It does **not** auto-block traffic.
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-22d3ee?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3+-34d399?style=for-the-badge)](https://scikit-learn.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+## Who it is for
 
----
+| Role | How they use Aegis |
+|------|---------------------|
+| **SOC / network analyst** | Triage suspicious flows; get priority, class, and playbook actions |
+| **Detection engineer** | Inspect model metrics, feature importance, and API contracts |
+| **Hiring manager** | See end-to-end security + ML product thinking |
 
-## Why Aegis is different
+## What it does
 
-| Principle | How Aegis does it |
-|-----------|-------------------|
-| **Hybrid detection** | Isolation Forest (anomaly) + Random Forest (benign / probe / DoS / R2L / U2R) |
-| **Fused risk score** | Combines attack probability + anomaly signal → low / medium / high / critical |
-| **Reproducible** | Synthetic KDD-style flows generated in-repo — no opaque data dumps |
-| **Transparent** | Held-out ROC-AUC, PR-AUC, macro-F1, confusion matrix, feature importances |
-| **Demo-ready** | FastAPI + dark SOC-style dashboard with curated attack scenarios |
-| **Honest scope** | Flow-feature classifier for education & portfolio — not a full NIDS product |
+1. **Unsupervised anomaly** — Isolation Forest vs a benign baseline
+2. **Supervised classification** — benign · probe · dos · r2l · u2r
+3. **Fused risk score** — low / medium / high / critical
+4. **Analyst packet** — summary, rationale, recommended actions, disposition
 
----
+### Design principles
 
-## Architecture
-
-```
-Network-flow features (30 dims)
-            │
-            ▼
-     StandardScaler
-        ┌───┴───┐
-        ▼       ▼
- Isolation   Random Forest
-  Forest     (5-class)
-        └───┬───┘
-            ▼
-   Fused risk score + labels
-            │
-     FastAPI  +  Dashboard
-```
-
-**Attack taxonomy (demo labels)**
-
-| ID | Class | Meaning (simplified) |
-|----|-------|----------------------|
-| 0 | benign | Normal traffic |
-| 1 | probe | Scanning / reconnaissance |
-| 2 | dos | Denial-of-service style volume |
-| 3 | r2l | Remote-to-local (e.g. brute force patterns) |
-| 4 | u2r | User-to-root / privilege indicators |
-
----
+- **Assist, don’t automate harm** — no auto-block in this product
+- **Explainability first** — class probabilities + written rationale
+- **Honest scope** — synthetic training data for reproducibility; production needs your telemetry
+- **Operational language** — priority, disposition, playbooks — not “AI magic”
 
 ## Quick start
 
 ```bash
 git clone https://github.com/3Fr4nj35-3ku5h3/aegis-threat-detection.git
 cd aegis-threat-detection
-
-python3 -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-
-# 1) Generate synthetic training data
+# If models/ is empty:
 python src/generate_data.py --n 12000
-
-# 2) Train models + write metrics
 python src/train.py
-
-# 3) Launch API + dashboard
 uvicorn src.api:app --host 0.0.0.0 --port 8000
 ```
 
-Open **http://127.0.0.1:8000** — select a scenario → **Score selected**.
+Open **http://127.0.0.1:8000** → select a scenario → **Run triage**.
 
-### API examples
+### API
 
-```bash
-curl -s http://127.0.0.1:8000/api/health | jq
-curl -s http://127.0.0.1:8000/api/metrics | jq
-curl -s -X POST http://127.0.0.1:8000/api/score/one \
-  -H 'Content-Type: application/json' \
-  -d '{"flow":{"duration":0.2,"protocol_type":0,"src_bytes":20,"count":120,"same_srv_rate":0.1}}' | jq
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/health` | Liveness + model readiness |
+| `GET /api/metrics` | Held-out metrics (model card) |
+| `GET /api/schema` | Feature + label schema |
+| `POST /api/score/one` | Score a single flow → analyst packet |
+| `POST /api/score` | Batch score |
+| `GET /api/demo-samples` | Built-in triage scenarios |
+
+## Deploy (Render)
+
+```
+Build:  pip install -r requirements.txt
+Start:  uvicorn src.api:app --host 0.0.0.0 --port $PORT
 ```
 
----
+Use the included `Procfile`. Ensure `models/*.joblib` are in the repo.
 
-## Project layout
+## Layout
 
 ```
-aegis-threat-detection/
-├── src/
-│   ├── generate_data.py   # synthetic flow generator
-│   ├── train.py           # IsolationForest + RandomForest
-│   ├── infer.py           # scoring engine
-│   ├── api.py             # FastAPI app
-│   └── features.py        # schema + label maps
-├── static/index.html      # detection dashboard
-├── data/                  # flows.csv (generated)
-├── models/                # joblib artifacts (generated)
-├── reports/metrics.json
-└── requirements.txt
+src/          generate, train, infer, playbook, api, features
+static/       Aegis Console UI
+models/       joblib artifacts
+reports/      metrics.json
+Procfile
 ```
 
----
+## Model card
 
-## Typical metrics (synthetic hold-out)
+Trained on synthetic KDD-style features for demo reproducibility. Publish metrics from `reports/metrics.json` after training.
 
-After `python src/train.py` you should see strong separation on this controlled dataset, for example:
+Before production: use your labeled flows, recalibrate thresholds with analysts, log scores for audit, keep a human in the loop for high/critical.
 
-- Isolation Forest ROC-AUC (attack vs benign) ≈ **0.90+**
-- Random Forest ROC-AUC (attack vs benign) ≈ **0.95+**
-- Macro-F1 across 5 classes ≈ **0.90+**
+## Legal
 
-Exact numbers are written to `reports/metrics.json` on every train run — **cite those**, not this README.
-
----
-
-## Security & ethics
-
-- For **authorized research, education, and portfolio demonstration** only  
-- Synthetic features — not a license to scan networks you do not own  
-- Models can be wrong; never auto-block production traffic from a demo classifier  
-- Unauthorized access to systems is illegal  
-
----
+Authorized environments only. Unauthorized access to systems is illegal.
 
 ## Author
 
-**Francis Ngumi Kuria**  
-Cybersecurity Analyst (Cyber Shujaa — Security Analyst With Pass)  
-Junior Data Scientist (Ngao Labs — Foundations of DS & AI)  
-
-[Portfolio](https://3fr4nj35-3ku5h3.github.io/francis-kuria.github.io/) · [GitHub](https://github.com/3Fr4nj35-3ku5h3)
+**Francis Ngumi Kuria** — Cybersecurity Analyst (Cyber Shujaa) · Junior Data Scientist (Ngao Labs)
 
 MIT License
