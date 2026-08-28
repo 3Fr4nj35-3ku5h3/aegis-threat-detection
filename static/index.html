@@ -3,260 +3,318 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Aegis · AI Threat Detection</title>
+  <meta name="description" content="Aegis — AI-assisted network flow triage for security analysts. Hybrid anomaly detection and attack classification." />
+  <title>Aegis Console · Network Flow Triage</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #070b14;
-      --surface: #0d1424;
-      --surface2: #121a2e;
-      --border: rgba(148,163,184,.12);
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --cyan: #22d3ee;
-      --emerald: #34d399;
-      --amber: #fbbf24;
-      --rose: #f43f5e;
-      --violet: #a78bfa;
+      --bg: #0b0e14;
+      --panel: #11161f;
+      --panel2: #171d28;
+      --line: rgba(255,255,255,.08);
+      --text: #e8edf5;
+      --muted: #8b98a8;
+      --cyan: #3dd6c6;
+      --blue: #5b9fd4;
+      --amber: #e6b84d;
+      --red: #e85d5d;
+      --green: #4caf82;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: Inter, system-ui, sans-serif;
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      line-height: 1.5;
+      font-size: 14px;
+      line-height: 1.45;
     }
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background:
-        radial-gradient(ellipse 70% 40% at 20% -10%, rgba(34,211,238,.09), transparent),
-        radial-gradient(ellipse 50% 30% at 90% 100%, rgba(167,139,250,.07), transparent);
-      pointer-events: none; z-index: 0;
+    .shell { max-width: 1200px; margin: 0 auto; padding: 0 1rem 2.5rem; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; flex-wrap: wrap;
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 1.25rem;
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(11,14,20,.92);
+      backdrop-filter: blur(10px);
     }
-    .app { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 1.75rem 1.25rem 3rem; }
-
-    header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.75rem; }
-    .brand h1 { font-size: 1.55rem; font-weight: 700; letter-spacing: -.03em; }
-    .brand h1 span { background: linear-gradient(135deg, var(--cyan), var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .brand p { color: var(--muted); font-size: .9rem; margin-top: .25rem; max-width: 420px; }
-    .status {
-      display: inline-flex; align-items: center; gap: .45rem;
-      font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-      padding: .4rem .75rem; border-radius: 999px;
-      background: rgba(52,211,153,.1); border: 1px solid rgba(52,211,153,.3); color: var(--emerald);
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .logo {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, #1a3a3a, #0f2a40);
+      border: 1px solid rgba(61,214,198,.35);
+      display: grid; place-items: center;
+      font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 12px; color: var(--cyan);
     }
-    .status.down { background: rgba(244,63,94,.1); border-color: rgba(244,63,94,.3); color: var(--rose); }
-    .status .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1.25rem;
+    .brand h1 { font-size: 1rem; font-weight: 600; letter-spacing: -0.02em; }
+    .brand h1 span { color: var(--muted); font-weight: 500; }
+    .brand .tag { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-top: 1px; }
+    .top-meta { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 11px; font-weight: 500;
+      padding: 0.3rem 0.55rem; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--panel);
+      color: var(--muted); font-family: "IBM Plex Mono", monospace;
     }
-    .card h2 {
-      font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-      color: var(--muted); margin-bottom: .9rem;
+    .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+    .pill.ok { color: var(--green); border-color: rgba(76,175,130,.35); }
+    .pill.ok .dot { background: var(--green); }
+    .pill.bad { color: var(--red); border-color: rgba(232,93,93,.35); }
+    .pill.bad .dot { background: var(--red); }
+    .hero { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1.1rem 1.15rem;
     }
-
-    .samples { display: flex; flex-direction: column; gap: .5rem; }
-    .sample-btn {
-      text-align: left; width: 100%;
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 10px; padding: .75rem .9rem; color: var(--text);
-      cursor: pointer; font-family: inherit; transition: border-color .15s, background .15s;
+    .panel h2 {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted); margin-bottom: 0.65rem;
     }
-    .sample-btn:hover { border-color: rgba(34,211,238,.4); background: rgba(34,211,238,.06); }
-    .sample-btn strong { display: block; font-size: .9rem; margin-bottom: .15rem; }
-    .sample-btn span { font-size: .75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-
-    .result-empty { color: var(--muted); font-size: .9rem; padding: 1.5rem 0; text-align: center; }
-
-    .risk-hero {
-      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-      padding: 1rem; border-radius: 12px; margin-bottom: 1rem;
-      background: var(--surface2); border: 1px solid var(--border);
+    .hero-copy h3 {
+      font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em;
+      margin-bottom: 0.4rem; line-height: 1.25;
     }
-    .risk-hero.low { border-color: rgba(52,211,153,.35); }
-    .risk-hero.medium { border-color: rgba(251,191,36,.35); }
-    .risk-hero.high { border-color: rgba(244,63,94,.35); }
-    .risk-hero.critical { border-color: rgba(244,63,94,.55); background: rgba(244,63,94,.08); }
-    .risk-score {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 2rem; font-weight: 700; line-height: 1;
+    .hero-copy p { color: var(--muted); font-size: 13px; max-width: 52ch; }
+    .hero-copy ul { margin-top: 0.85rem; padding-left: 1.1rem; color: var(--muted); font-size: 13px; }
+    .hero-copy li { margin-bottom: 0.25rem; }
+    .hero-copy strong { color: var(--text); font-weight: 600; }
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+    .kpi {
+      background: var(--panel2); border: 1px solid var(--line);
+      border-radius: 8px; padding: 0.7rem 0.75rem;
     }
-    .risk-level {
-      font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-      margin-top: .35rem;
+    .kpi .v { font-family: "IBM Plex Mono", monospace; font-size: 1.15rem; font-weight: 600; color: var(--cyan); }
+    .kpi .l { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: 0.2rem; }
+    .main { display: grid; grid-template-columns: 340px 1fr; gap: 1rem; }
+    @media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+    .scenario {
+      width: 100%; text-align: left; cursor: pointer;
+      background: var(--panel2); border: 1px solid var(--line);
+      border-radius: 8px; padding: 0.7rem 0.8rem; margin-bottom: 0.45rem;
+      color: var(--text); font-family: inherit; transition: border-color .15s, background .15s;
     }
-    .meta { text-align: right; font-size: .85rem; color: var(--muted); }
-    .meta strong { color: var(--text); display: block; font-size: 1rem; }
-
-    .bars { display: flex; flex-direction: column; gap: .55rem; margin-bottom: 1rem; }
-    .bar-row { display: grid; grid-template-columns: 70px 1fr 48px; gap: .5rem; align-items: center; font-size: .8rem; }
-    .bar-row span:first-child { color: var(--muted); text-transform: uppercase; font-size: .68rem; letter-spacing: .04em; }
-    .bar-track { height: 8px; background: var(--bg); border-radius: 99px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--cyan), var(--violet)); transition: width .4s ease; }
-    .bar-row span:last-child { font-family: 'JetBrains Mono', monospace; text-align: right; }
-
-    .chips { display: flex; flex-wrap: wrap; gap: .4rem; }
-    .chip {
-      font-size: .75rem; padding: .3rem .55rem; border-radius: 6px;
-      background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .chip.on { color: var(--amber); border-color: rgba(251,191,36,.35); }
-
-    .metrics-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .65rem;
-    }
-    .metric {
-      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
-      padding: .85rem; text-align: center;
-    }
-    .metric .v { font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; color: var(--cyan); }
-    .metric .l { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: .25rem; }
-
-    .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .scenario:hover { border-color: rgba(61,214,198,.35); }
+    .scenario.active { border-color: rgba(61,214,198,.55); background: rgba(61,214,198,.06); }
+    .scenario .name { font-weight: 600; font-size: 13px; }
+    .scenario .exp { font-size: 11px; color: var(--muted); margin-top: 0.2rem; font-family: "IBM Plex Mono", monospace; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.75rem; }
     .btn {
-      font-family: inherit; font-size: .85rem; font-weight: 600;
-      padding: .55rem 1rem; border-radius: 9px; cursor: pointer;
-      border: 1px solid var(--border); background: var(--surface2); color: var(--text);
-      transition: .15s;
+      font-family: inherit; font-size: 12px; font-weight: 600;
+      padding: 0.5rem 0.85rem; border-radius: 7px; cursor: pointer;
+      border: 1px solid var(--line); background: var(--panel2); color: var(--text);
     }
-    .btn:hover { border-color: rgba(34,211,238,.4); color: var(--cyan); }
-    .btn-primary {
-      background: linear-gradient(135deg, rgba(34,211,238,.18), rgba(167,139,250,.12));
-      border-color: rgba(34,211,238,.35); color: var(--cyan);
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: rgba(61,214,198,.12); border-color: rgba(61,214,198,.4); color: var(--cyan); }
+    .btn-primary:hover:not(:disabled) { background: rgba(61,214,198,.2); }
+    .empty { color: var(--muted); text-align: center; padding: 2.5rem 1rem; font-size: 13px; }
+    .risk-banner {
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+      padding: 1rem 1.1rem; border-radius: 10px; margin-bottom: 0.9rem;
+      border: 1px solid var(--line); background: var(--panel2);
     }
-
+    .risk-banner.low { border-color: rgba(76,175,130,.35); }
+    .risk-banner.medium { border-color: rgba(230,184,77,.4); }
+    .risk-banner.high { border-color: rgba(232,93,93,.4); }
+    .risk-banner.critical { border-color: rgba(232,93,93,.55); background: rgba(232,93,93,.08); }
+    .risk-score { font-family: "IBM Plex Mono", monospace; font-size: 2rem; font-weight: 600; line-height: 1; }
+    .risk-level { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-top: 0.3rem; }
+    .risk-side { text-align: right; font-size: 12px; color: var(--muted); }
+    .risk-side strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 0.15rem; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+    @media (max-width: 640px) { .split { grid-template-columns: 1fr; } }
+    .subpanel {
+      background: var(--panel2); border: 1px solid var(--line);
+      border-radius: 8px; padding: 0.85rem;
+    }
+    .subpanel h3 {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+      color: var(--muted); margin-bottom: 0.55rem; font-weight: 600;
+    }
+    .bar-row {
+      display: grid; grid-template-columns: 64px 1fr 42px; gap: 0.4rem;
+      align-items: center; margin-bottom: 0.35rem; font-size: 12px;
+    }
+    .bar-row .lab { color: var(--muted); font-size: 11px; }
+    .track { height: 6px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+    .fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--cyan), var(--blue)); }
+    .bar-row .pct { font-family: "IBM Plex Mono", monospace; text-align: right; font-size: 11px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+    .chip {
+      font-size: 11px; font-family: "IBM Plex Mono", monospace;
+      padding: 0.25rem 0.45rem; border-radius: 5px;
+      background: var(--bg); border: 1px solid var(--line); color: var(--muted);
+    }
+    .chip.warn { color: var(--amber); border-color: rgba(230,184,77,.35); }
+    .actions-list { list-style: none; }
+    .actions-list li {
+      position: relative; padding: 0.45rem 0 0.45rem 1rem;
+      border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--muted);
+    }
+    .actions-list li:last-child { border-bottom: none; }
+    .actions-list li::before {
+      content: ""; position: absolute; left: 0; top: 0.7rem;
+      width: 5px; height: 5px; border-radius: 50%; background: var(--cyan);
+    }
+    .summary-box {
+      font-size: 13px; color: var(--text); margin-bottom: 0.65rem;
+      padding: 0.55rem 0.65rem; background: var(--bg); border-radius: 6px;
+      border-left: 3px solid var(--cyan);
+    }
+    .rationale { font-size: 12px; color: var(--muted); margin-bottom: 0.35rem; }
+    .notice {
+      margin-top: 1rem; padding: 0.75rem 0.9rem; border-radius: 8px;
+      border: 1px solid var(--line); background: var(--panel);
+      font-size: 12px; color: var(--muted);
+    }
+    .notice strong { color: var(--text); }
     footer {
-      margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--border);
-      font-size: .78rem; color: var(--muted); text-align: center;
+      margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line);
+      font-size: 11px; color: var(--muted); display: flex; flex-wrap: wrap;
+      justify-content: space-between; gap: 0.5rem;
     }
     footer a { color: var(--cyan); text-decoration: none; }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header>
+  <div class="shell">
+    <header class="topbar">
       <div class="brand">
-        <h1>Aegis <span>Threat Detection</span></h1>
-        <p>Hybrid AI scoring: Isolation Forest anomaly detection + Random Forest attack classification on network-flow features.</p>
-      </div>
-      <div class="status" id="health"><span class="dot"></span> Checking…</div>
-    </header>
-
-    <div class="grid">
-      <div class="card">
-        <h2>Demo scenarios</h2>
-        <div class="samples" id="samples">Loading samples…</div>
-        <div class="actions">
-          <button class="btn btn-primary" id="runBtn" disabled>Score selected</button>
-          <button class="btn" id="clearBtn">Clear result</button>
+        <div class="logo">AG</div>
+        <div>
+          <h1>Aegis <span>Console</span></h1>
+          <div class="tag">Network flow triage · Analyst assist</div>
         </div>
       </div>
-
-      <div class="card">
-        <h2>Detection result</h2>
-        <div id="result"><div class="result-empty">Select a scenario and run scoring.</div></div>
+      <div class="top-meta">
+        <span class="pill" id="healthPill"><span class="dot"></span> checking</span>
+        <span class="pill">v1.1</span>
       </div>
-    </div>
+    </header>
 
-    <div class="card" style="margin-top:1rem">
-      <h2>Model performance (held-out test)</h2>
-      <div class="metrics-grid" id="metrics">
-        <div class="metric"><div class="v">—</div><div class="l">Train models first</div></div>
+    <section class="hero">
+      <div class="panel hero-copy">
+        <h2>Product</h2>
+        <h3>Decision support for network security triage</h3>
+        <p>
+          Aegis scores network-flow style records with a hybrid pipeline:
+          unsupervised anomaly detection plus supervised attack-family classification.
+          Output is built for <strong>analysts</strong> — risk, confidence, rationale, and recommended next steps.
+          It does not auto-block traffic.
+        </p>
+        <ul>
+          <li><strong>Isolation Forest</strong> — deviation from benign baseline</li>
+          <li><strong>Random Forest</strong> — benign / probe / dos / r2l / u2r</li>
+          <li><strong>Fused risk</strong> — operational priority for the queue</li>
+        </ul>
       </div>
+      <div class="panel">
+        <h2>Model card (held-out)</h2>
+        <div class="kpi-grid" id="kpis">
+          <div class="kpi"><div class="v">—</div><div class="l">IF ROC-AUC</div></div>
+          <div class="kpi"><div class="v">—</div><div class="l">RF ROC-AUC</div></div>
+          <div class="kpi"><div class="v">—</div><div class="l">Macro F1</div></div>
+          <div class="kpi"><div class="v">—</div><div class="l">Train rows</div></div>
+        </div>
+        <p style="margin-top:0.7rem;font-size:11px;color:var(--muted)">
+          Metrics from the last train run. Synthetic training data — validate on your own labeled flows before production use.
+        </p>
+      </div>
+    </section>
+
+    <section class="main">
+      <aside class="panel">
+        <h2>Triage scenarios</h2>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem">
+          Select a representative flow. Scores illustrate the product workflow.
+        </p>
+        <div id="scenarios">Loading…</div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="runBtn" disabled>Run triage</button>
+          <button type="button" class="btn" id="clearBtn">Clear</button>
+        </div>
+      </aside>
+      <div class="panel">
+        <h2>Triage result</h2>
+        <div id="result"><div class="empty">Select a scenario and run triage to produce an analyst packet.</div></div>
+      </div>
+    </section>
+
+    <div class="notice">
+      <strong>Operational boundary.</strong>
+      Aegis is decision support for authorized environments. Calibrate on your telemetry before relying on scores.
+      Unauthorized access to systems you do not own is illegal. Models can be wrong — corroborate with logs and asset context.
     </div>
 
     <footer>
-      Aegis v1.0 · Built by <a href="https://3fr4nj35-3ku5h3.github.io/francis-kuria.github.io/" target="_blank" rel="noopener">Francis Kuria</a>
-      · Authorized security research &amp; education only ·
-      <a href="https://github.com/3Fr4nj35-3ku5h3" target="_blank" rel="noopener">GitHub</a>
+      <span>Aegis · Built for security operations workflows</span>
+      <span>
+        <a href="https://github.com/3Fr4nj35-3ku5h3/aegis-threat-detection" target="_blank" rel="noopener">Source</a>
+        ·
+        <a href="https://3fr4nj35-3ku5h3.github.io/francis-kuria.github.io/" target="_blank" rel="noopener">Author</a>
+      </span>
     </footer>
   </div>
-
   <script>
-    let samples = [];
-    let selected = null;
-
-    const healthEl = document.getElementById('health');
-    const samplesEl = document.getElementById('samples');
-    const resultEl = document.getElementById('result');
-    const metricsEl = document.getElementById('metrics');
-    const runBtn = document.getElementById('runBtn');
-    const clearBtn = document.getElementById('clearBtn');
+    let samples = [], selected = null;
+    const $ = (id) => document.getElementById(id);
 
     async function init() {
       try {
         const h = await fetch('/api/health').then(r => r.json());
+        const pill = $('healthPill');
         if (h.models_ready) {
-          healthEl.className = 'status';
-          healthEl.innerHTML = '<span class="dot"></span> Models online';
+          pill.className = 'pill ok';
+          pill.innerHTML = '<span class="dot"></span> models online';
         } else {
-          healthEl.className = 'status down';
-          healthEl.innerHTML = '<span class="dot"></span> Models missing';
+          pill.className = 'pill bad';
+          pill.innerHTML = '<span class="dot"></span> models offline';
         }
       } catch {
-        healthEl.className = 'status down';
-        healthEl.innerHTML = '<span class="dot"></span> API offline';
+        $('healthPill').className = 'pill bad';
+        $('healthPill').innerHTML = '<span class="dot"></span> api offline';
       }
-
-      try {
-        const data = await fetch('/api/demo-samples').then(r => r.json());
-        samples = data.samples || [];
-        renderSamples();
-      } catch {
-        samplesEl.textContent = 'Could not load samples.';
-      }
-
       try {
         const m = await fetch('/api/metrics').then(r => r.json());
-        renderMetrics(m);
-      } catch { /* optional */ }
+        const iso = m.isolation_forest || {}, rf = m.random_forest || {};
+        $('kpis').innerHTML = `
+          <div class="kpi"><div class="v">${iso.roc_auc_attack ?? '—'}</div><div class="l">IF ROC-AUC</div></div>
+          <div class="kpi"><div class="v">${rf.roc_auc_attack ?? '—'}</div><div class="l">RF ROC-AUC</div></div>
+          <div class="kpi"><div class="v">${rf.macro_f1 ?? '—'}</div><div class="l">Macro F1</div></div>
+          <div class="kpi"><div class="v">${m.n_train ?? '—'}</div><div class="l">Train rows</div></div>`;
+      } catch {}
+      try {
+        samples = (await fetch('/api/demo-samples').then(r => r.json())).samples || [];
+        renderScenarios();
+      } catch { $('scenarios').textContent = 'Unable to load scenarios.'; }
     }
 
-    function renderSamples() {
-      samplesEl.innerHTML = samples.map((s, i) => `
-        <button type="button" class="sample-btn" data-i="${i}">
-          <strong>${s.name}</strong>
-          <span>expected · ${s.expected}</span>
-        </button>
-      `).join('');
-      samplesEl.querySelectorAll('.sample-btn').forEach(btn => {
+    function renderScenarios() {
+      $('scenarios').innerHTML = samples.map((s, i) => `
+        <button type="button" class="scenario" data-i="${i}">
+          <div class="name">${s.name}</div>
+          <div class="exp">expected · ${s.expected}</div>
+        </button>`).join('');
+      $('scenarios').querySelectorAll('.scenario').forEach(btn => {
         btn.addEventListener('click', () => {
           selected = samples[+btn.dataset.i];
-          samplesEl.querySelectorAll('.sample-btn').forEach(b => b.style.borderColor = '');
-          btn.style.borderColor = 'rgba(34,211,238,.55)';
-          runBtn.disabled = false;
+          $('scenarios').querySelectorAll('.scenario').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          $('runBtn').disabled = false;
         });
       });
     }
 
-    function renderMetrics(m) {
-      const iso = m.isolation_forest || {};
-      const rf = m.random_forest || {};
-      metricsEl.innerHTML = `
-        <div class="metric"><div class="v">${iso.roc_auc_attack ?? '—'}</div><div class="l">IF ROC-AUC</div></div>
-        <div class="metric"><div class="v">${rf.roc_auc_attack ?? '—'}</div><div class="l">RF ROC-AUC</div></div>
-        <div class="metric"><div class="v">${rf.macro_f1 ?? '—'}</div><div class="l">Macro F1</div></div>
-        <div class="metric"><div class="v">${rf.weighted_f1 ?? '—'}</div><div class="l">Weighted F1</div></div>
-        <div class="metric"><div class="v">${m.n_train ?? '—'}</div><div class="l">Train rows</div></div>
-        <div class="metric"><div class="v">${m.n_test ?? '—'}</div><div class="l">Test rows</div></div>
-      `;
-    }
-
-    runBtn.addEventListener('click', async () => {
+    $('runBtn').addEventListener('click', async () => {
       if (!selected) return;
-      runBtn.disabled = true;
-      runBtn.textContent = 'Scoring…';
+      $('runBtn').disabled = true;
+      $('runBtn').textContent = 'Scoring…';
       try {
         const res = await fetch('/api/score/one', {
           method: 'POST',
@@ -264,55 +322,66 @@
           body: JSON.stringify({ flow: selected.flow }),
         }).then(r => r.json());
         renderResult(res, selected);
-      } catch (e) {
-        resultEl.innerHTML = `<div class="result-empty">Score failed — is the API running?</div>`;
+      } catch {
+        $('result').innerHTML = '<div class="empty">Triage failed. Check API health.</div>';
       }
-      runBtn.disabled = false;
-      runBtn.textContent = 'Score selected';
+      $('runBtn').disabled = false;
+      $('runBtn').textContent = 'Run triage';
     });
 
-    clearBtn.addEventListener('click', () => {
-      resultEl.innerHTML = '<div class="result-empty">Select a scenario and run scoring.</div>';
+    $('clearBtn').addEventListener('click', () => {
       selected = null;
-      runBtn.disabled = true;
-      samplesEl.querySelectorAll('.sample-btn').forEach(b => b.style.borderColor = '');
+      $('runBtn').disabled = true;
+      $('scenarios').querySelectorAll('.scenario').forEach(b => b.classList.remove('active'));
+      $('result').innerHTML = '<div class="empty">Select a scenario and run triage to produce an analyst packet.</div>';
     });
 
     function renderResult(r, sample) {
       const level = r.risk_level || 'low';
+      const a = r.analyst || {};
       const probs = r.class_probabilities || {};
-      const bars = Object.entries(probs)
-        .sort((a, b) => b[1] - a[1])
-        .map(([k, v]) => `
-          <div class="bar-row">
-            <span>${k}</span>
-            <div class="bar-track"><div class="bar-fill" style="width:${(v * 100).toFixed(1)}%"></div></div>
-            <span>${(v * 100).toFixed(1)}%</span>
-          </div>
-        `).join('');
-
-      resultEl.innerHTML = `
-        <div class="risk-hero ${level}">
+      const bars = Object.entries(probs).sort((x,y) => y[1]-x[1]).map(([k,v]) => `
+        <div class="bar-row">
+          <span class="lab">${k}</span>
+          <div class="track"><div class="fill" style="width:${(v*100).toFixed(1)}%"></div></div>
+          <span class="pct">${(v*100).toFixed(0)}%</span>
+        </div>`).join('');
+      const actions = (a.recommended_actions || []).map(t => `<li>${t}</li>`).join('');
+      const rationale = (a.rationale || []).map(t => `<div class="rationale">• ${t}</div>`).join('');
+      $('result').innerHTML = `
+        <div class="risk-banner ${level}">
           <div>
-            <div class="risk-score">${(r.risk_score * 100).toFixed(0)}</div>
-            <div class="risk-level" style="color:inherit">${level} risk</div>
+            <div class="risk-score">${Math.round((r.risk_score||0)*100)}</div>
+            <div class="risk-level">${level} risk</div>
           </div>
-          <div class="meta">
+          <div class="risk-side">
             <strong>${r.predicted_class}</strong>
-            Scenario: ${sample.name}<br/>
-            Attack p: ${(r.attack_probability * 100).toFixed(1)}%
+            disposition · ${a.disposition || '—'}<br/>
+            priority · ${a.priority || '—'}<br/>
+            scenario · ${sample.name}
           </div>
         </div>
-        <h2 style="margin-bottom:.6rem">Class probabilities</h2>
-        <div class="bars">${bars}</div>
-        <div class="chips">
-          <span class="chip ${r.anomaly_flag ? 'on' : ''}">anomaly ${r.anomaly_flag ? 'FLAGGED' : 'clear'}</span>
-          <span class="chip">anomaly score ${r.anomaly_score}</span>
-          <span class="chip">expected ${sample.expected}</span>
+        <div class="split">
+          <div class="subpanel">
+            <h3>Class probabilities</h3>
+            ${bars}
+            <div class="chips">
+              <span class="chip ${r.anomaly_flag ? 'warn' : ''}">anomaly ${r.anomaly_flag ? 'flagged' : 'clear'}</span>
+              <span class="chip">attack p ${((r.attack_probability||0)*100).toFixed(0)}%</span>
+              <span class="chip">expected ${sample.expected}</span>
+            </div>
+          </div>
+          <div class="subpanel">
+            <h3>Analyst summary</h3>
+            <div class="summary-box">${a.summary || 'No summary'}</div>
+            ${rationale}
+          </div>
         </div>
-      `;
+        <div class="subpanel" style="margin-top:0.85rem">
+          <h3>Recommended actions</h3>
+          <ul class="actions-list">${actions || '<li>No actions listed</li>'}</ul>
+        </div>`;
     }
-
     init();
   </script>
 </body>
