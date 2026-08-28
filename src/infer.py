@@ -11,8 +11,10 @@ import pandas as pd
 
 try:
     from features import FEATURE_COLUMNS, LABEL_MAP
+    from playbook import enrich
 except ImportError:
     from src.features import FEATURE_COLUMNS, LABEL_MAP
+    from src.playbook import enrich
 
 
 class AegisEngine:
@@ -63,16 +65,16 @@ class AegisEngine:
             else:
                 level = "low"
 
-            out.append(
-                {
-                    "predicted_class": LABEL_MAP.get(class_id, "unknown"),
-                    "predicted_class_id": class_id,
-                    "class_probabilities": class_probs,
-                    "attack_probability": round(float(attack_prob[i]), 4),
-                    "anomaly_score": round(float(iso_raw[i]), 4),
-                    "anomaly_flag": bool(iso_flag[i]),
-                    "risk_score": risk,
-                    "risk_level": level,
-                }
-            )
+            raw = {
+                "predicted_class": LABEL_MAP.get(class_id, "unknown"),
+                "predicted_class_id": class_id,
+                "class_probabilities": class_probs,
+                "attack_probability": round(float(attack_prob[i]), 4),
+                "anomaly_score": round(float(iso_raw[i]), 4),
+                "anomaly_flag": bool(iso_flag[i]),
+                "risk_score": risk,
+                "risk_level": level,
+                "model_version": "1.1.0",
+            }
+            out.append(enrich(raw))
         return out
