@@ -16,6 +16,29 @@ except ImportError:
     from src.features import FEATURE_COLUMNS, LABEL_MAP
     from src.playbook import enrich
 
+MODEL_VERSION = "1.2.0"
+
+
+def _risk_level(risk: float, sensitivity: float) -> str:
+    """
+    sensitivity in [-1, 1]:
+      -1 = fewer alerts (higher bars for high/critical)
+       0 = default
+      +1 = more alerts (lower bars)
+    """
+    s = float(np.clip(sensitivity, -1.0, 1.0))
+    # shift thresholds: positive sensitivity lowers bars
+    t_med = 0.30 - 0.12 * s
+    t_high = 0.50 - 0.12 * s
+    t_crit = 0.75 - 0.10 * s
+    if risk >= t_crit:
+        return "critical"
+    if risk >= t_high:
+        return "high"
+    if risk >= t_med:
+        return "medium"
+    return "low"
+
 
 class AegisEngine:
     def __init__(self, model_dir: str = "models"):
@@ -34,7 +57,11 @@ class AegisEngine:
                 df[col] = 0.0
         return df[FEATURE_COLUMNS].astype(np.float64).values
 
-    def score(self, records: list[dict[str, Any]] | dict[str, Any]) -> list[dict[str, Any]]:
+    def score(
+        self,
+        records: list[dict[str, Any]] | dict[str, Any],
+        sensitivity: float = 0.0,
+    ) -> list[dict[str, Any]]:
         X = self._matrix(records)
         Xs = self.scaler.transform(X)
 
@@ -46,24 +73,16 @@ class AegisEngine:
         benign_idx = self.classes.index(0) if 0 in self.classes else 0
         attack_prob = 1.0 - proba[:, benign_idx]
 
-        out = []
+        out: list[dict[str, Any]] = []
         for i in range(len(X)):
             class_id = int(pred[i])
             class_probs = {
                 LABEL_MAP.get(int(c), str(c)): round(float(proba[i, j]), 4)
                 for j, c in enumerate(self.classes)
             }
-            # Combined risk: blend supervised attack prob + normalized anomaly
-            anomaly_norm = float(1 / (1 + np.exp(-(iso_raw[i] - 0.5) * 3)))  # soft squash
+            anomaly_norm = float(1 / (1 + np.exp(-(iso_raw[i] - 0.5) * 3)))
             risk = round(float(0.65 * attack_prob[i] + 0.35 * anomaly_norm), 4)
-            if risk >= 0.75:
-                level = "critical"
-            elif risk >= 0.5:
-                level = "high"
-            elif risk >= 0.3:
-                level = "medium"
-            else:
-                level = "low"
+            level = _risk_level(risk, sensitivity)
 
             raw = {
                 "predicted_class": LABEL_MAP.get(class_id, "unknown"),
@@ -74,7 +93,8 @@ class AegisEngine:
                 "anomaly_flag": bool(iso_flag[i]),
                 "risk_score": risk,
                 "risk_level": level,
-                "model_version": "1.1.0",
+                "sensitivity": round(float(sensitivity), 3),
+                "model_version": MODEL_VERSION,
             }
             out.append(enrich(raw))
         return out
