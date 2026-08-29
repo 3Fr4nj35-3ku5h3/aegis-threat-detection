@@ -3,183 +3,84 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Aegis — AI-assisted network flow triage for security analysts. Hybrid anomaly detection and attack classification." />
+  <meta name="description" content="Aegis Console v1.2 — AI-assisted network flow triage for security analysts. Batch CSV, audit log, adjustable sensitivity." />
   <title>Aegis Console · Network Flow Triage</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0b0e14;
-      --panel: #11161f;
-      --panel2: #171d28;
-      --line: rgba(255,255,255,.08);
-      --text: #e8edf5;
-      --muted: #8b98a8;
-      --cyan: #3dd6c6;
-      --blue: #5b9fd4;
-      --amber: #e6b84d;
-      --red: #e85d5d;
-      --green: #4caf82;
+      --bg:#0b0e14; --panel:#11161f; --panel2:#171d28; --line:rgba(255,255,255,.08);
+      --text:#e8edf5; --muted:#8b98a8; --cyan:#3dd6c6; --blue:#5b9fd4;
+      --amber:#e6b84d; --red:#e85d5d; --green:#4caf82;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: "IBM Plex Sans", system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      font-size: 14px;
-      line-height: 1.45;
-    }
-    .shell { max-width: 1200px; margin: 0 auto; padding: 0 1rem 2.5rem; }
-    .topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 1rem; flex-wrap: wrap;
-      padding: 0.85rem 0;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 1.25rem;
-      position: sticky; top: 0; z-index: 20;
-      background: rgba(11,14,20,.92);
-      backdrop-filter: blur(10px);
-    }
-    .brand { display: flex; align-items: center; gap: 0.75rem; }
-    .logo {
-      width: 32px; height: 32px; border-radius: 8px;
-      background: linear-gradient(135deg, #1a3a3a, #0f2a40);
-      border: 1px solid rgba(61,214,198,.35);
-      display: grid; place-items: center;
-      font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 12px; color: var(--cyan);
-    }
-    .brand h1 { font-size: 1rem; font-weight: 600; letter-spacing: -0.02em; }
-    .brand h1 span { color: var(--muted); font-weight: 500; }
-    .brand .tag { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-top: 1px; }
-    .top-meta { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
-    .pill {
-      display: inline-flex; align-items: center; gap: 0.35rem;
-      font-size: 11px; font-weight: 500;
-      padding: 0.3rem 0.55rem; border-radius: 999px;
-      border: 1px solid var(--line); background: var(--panel);
-      color: var(--muted); font-family: "IBM Plex Mono", monospace;
-    }
-    .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
-    .pill.ok { color: var(--green); border-color: rgba(76,175,130,.35); }
-    .pill.ok .dot { background: var(--green); }
-    .pill.bad { color: var(--red); border-color: rgba(232,93,93,.35); }
-    .pill.bad .dot { background: var(--red); }
-    .hero { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-    @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 1.1rem 1.15rem;
-    }
-    .panel h2 {
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: .07em; color: var(--muted); margin-bottom: 0.65rem;
-    }
-    .hero-copy h3 {
-      font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em;
-      margin-bottom: 0.4rem; line-height: 1.25;
-    }
-    .hero-copy p { color: var(--muted); font-size: 13px; max-width: 52ch; }
-    .hero-copy ul { margin-top: 0.85rem; padding-left: 1.1rem; color: var(--muted); font-size: 13px; }
-    .hero-copy li { margin-bottom: 0.25rem; }
-    .hero-copy strong { color: var(--text); font-weight: 600; }
-    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; }
-    .kpi {
-      background: var(--panel2); border: 1px solid var(--line);
-      border-radius: 8px; padding: 0.7rem 0.75rem;
-    }
-    .kpi .v { font-family: "IBM Plex Mono", monospace; font-size: 1.15rem; font-weight: 600; color: var(--cyan); }
-    .kpi .l { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: 0.2rem; }
-    .main { display: grid; grid-template-columns: 340px 1fr; gap: 1rem; }
-    @media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
-    .scenario {
-      width: 100%; text-align: left; cursor: pointer;
-      background: var(--panel2); border: 1px solid var(--line);
-      border-radius: 8px; padding: 0.7rem 0.8rem; margin-bottom: 0.45rem;
-      color: var(--text); font-family: inherit; transition: border-color .15s, background .15s;
-    }
-    .scenario:hover { border-color: rgba(61,214,198,.35); }
-    .scenario.active { border-color: rgba(61,214,198,.55); background: rgba(61,214,198,.06); }
-    .scenario .name { font-weight: 600; font-size: 13px; }
-    .scenario .exp { font-size: 11px; color: var(--muted); margin-top: 0.2rem; font-family: "IBM Plex Mono", monospace; }
-    .btn-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.75rem; }
-    .btn {
-      font-family: inherit; font-size: 12px; font-weight: 600;
-      padding: 0.5rem 0.85rem; border-radius: 7px; cursor: pointer;
-      border: 1px solid var(--line); background: var(--panel2); color: var(--text);
-    }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-primary { background: rgba(61,214,198,.12); border-color: rgba(61,214,198,.4); color: var(--cyan); }
-    .btn-primary:hover:not(:disabled) { background: rgba(61,214,198,.2); }
-    .empty { color: var(--muted); text-align: center; padding: 2.5rem 1rem; font-size: 13px; }
-    .risk-banner {
-      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
-      padding: 1rem 1.1rem; border-radius: 10px; margin-bottom: 0.9rem;
-      border: 1px solid var(--line); background: var(--panel2);
-    }
-    .risk-banner.low { border-color: rgba(76,175,130,.35); }
-    .risk-banner.medium { border-color: rgba(230,184,77,.4); }
-    .risk-banner.high { border-color: rgba(232,93,93,.4); }
-    .risk-banner.critical { border-color: rgba(232,93,93,.55); background: rgba(232,93,93,.08); }
-    .risk-score { font-family: "IBM Plex Mono", monospace; font-size: 2rem; font-weight: 600; line-height: 1; }
-    .risk-level { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-top: 0.3rem; }
-    .risk-side { text-align: right; font-size: 12px; color: var(--muted); }
-    .risk-side strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 0.15rem; }
-    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
-    @media (max-width: 640px) { .split { grid-template-columns: 1fr; } }
-    .subpanel {
-      background: var(--panel2); border: 1px solid var(--line);
-      border-radius: 8px; padding: 0.85rem;
-    }
-    .subpanel h3 {
-      font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
-      color: var(--muted); margin-bottom: 0.55rem; font-weight: 600;
-    }
-    .bar-row {
-      display: grid; grid-template-columns: 64px 1fr 42px; gap: 0.4rem;
-      align-items: center; margin-bottom: 0.35rem; font-size: 12px;
-    }
-    .bar-row .lab { color: var(--muted); font-size: 11px; }
-    .track { height: 6px; background: var(--bg); border-radius: 99px; overflow: hidden; }
-    .fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--cyan), var(--blue)); }
-    .bar-row .pct { font-family: "IBM Plex Mono", monospace; text-align: right; font-size: 11px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
-    .chip {
-      font-size: 11px; font-family: "IBM Plex Mono", monospace;
-      padding: 0.25rem 0.45rem; border-radius: 5px;
-      background: var(--bg); border: 1px solid var(--line); color: var(--muted);
-    }
-    .chip.warn { color: var(--amber); border-color: rgba(230,184,77,.35); }
-    .actions-list { list-style: none; }
-    .actions-list li {
-      position: relative; padding: 0.45rem 0 0.45rem 1rem;
-      border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--muted);
-    }
-    .actions-list li:last-child { border-bottom: none; }
-    .actions-list li::before {
-      content: ""; position: absolute; left: 0; top: 0.7rem;
-      width: 5px; height: 5px; border-radius: 50%; background: var(--cyan);
-    }
-    .summary-box {
-      font-size: 13px; color: var(--text); margin-bottom: 0.65rem;
-      padding: 0.55rem 0.65rem; background: var(--bg); border-radius: 6px;
-      border-left: 3px solid var(--cyan);
-    }
-    .rationale { font-size: 12px; color: var(--muted); margin-bottom: 0.35rem; }
-    .notice {
-      margin-top: 1rem; padding: 0.75rem 0.9rem; border-radius: 8px;
-      border: 1px solid var(--line); background: var(--panel);
-      font-size: 12px; color: var(--muted);
-    }
-    .notice strong { color: var(--text); }
-    footer {
-      margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line);
-      font-size: 11px; color: var(--muted); display: flex; flex-wrap: wrap;
-      justify-content: space-between; gap: 0.5rem;
-    }
-    footer a { color: var(--cyan); text-decoration: none; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"IBM Plex Sans",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;min-height:100vh}
+    .shell{max-width:1200px;margin:0 auto;padding:0 1rem 2.5rem}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.85rem 0;border-bottom:1px solid var(--line);margin-bottom:1rem;position:sticky;top:0;z-index:20;background:rgba(11,14,20,.92);backdrop-filter:blur(10px)}
+    .brand{display:flex;align-items:center;gap:.75rem}
+    .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1a3a3a,#0f2a40);border:1px solid rgba(61,214,198,.35);display:grid;place-items:center;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:12px;color:var(--cyan)}
+    .brand h1{font-size:1rem;font-weight:600}.brand h1 span{color:var(--muted);font-weight:500}
+    .brand .tag{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .top-meta{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+    .pill{display:inline-flex;align-items:center;gap:.35rem;font-size:11px;font-weight:500;padding:.3rem .55rem;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-family:"IBM Plex Mono",monospace}
+    .pill .dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+    .pill.ok{color:var(--green);border-color:rgba(76,175,130,.35)}.pill.ok .dot{background:var(--green)}
+    .pill.bad{color:var(--red);border-color:rgba(232,93,93,.35)}.pill.bad .dot{background:var(--red)}
+    .tabs{display:flex;gap:.35rem;margin-bottom:1rem;flex-wrap:wrap}
+    .tab{font-family:inherit;font-size:12px;font-weight:600;padding:.45rem .85rem;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer}
+    .tab.active{color:var(--cyan);border-color:rgba(61,214,198,.4);background:rgba(61,214,198,.1)}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.1rem 1.15rem;margin-bottom:1rem}
+    .panel h2{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.65rem}
+    .main{display:grid;grid-template-columns:340px 1fr;gap:1rem}
+    @media(max-width:860px){.main{grid-template-columns:1fr}}
+    .scenario{width:100%;text-align:left;cursor:pointer;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.7rem .8rem;margin-bottom:.45rem;color:var(--text);font-family:inherit}
+    .scenario:hover{border-color:rgba(61,214,198,.35)}.scenario.active{border-color:rgba(61,214,198,.55);background:rgba(61,214,198,.06)}
+    .scenario .name{font-weight:600;font-size:13px}.scenario .exp{font-size:11px;color:var(--muted);margin-top:.2rem;font-family:"IBM Plex Mono",monospace}
+    .btn-row{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.75rem}
+    .btn{font-family:inherit;font-size:12px;font-weight:600;padding:.5rem .85rem;border-radius:7px;cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+    .btn:disabled{opacity:.4;cursor:not-allowed}
+    .btn-primary{background:rgba(61,214,198,.12);border-color:rgba(61,214,198,.4);color:var(--cyan)}
+    .empty{color:var(--muted);text-align:center;padding:2rem 1rem;font-size:13px}
+    .risk-banner{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.1rem;border-radius:10px;margin-bottom:.9rem;border:1px solid var(--line);background:var(--panel2)}
+    .risk-banner.low{border-color:rgba(76,175,130,.35)}.risk-banner.medium{border-color:rgba(230,184,77,.4)}
+    .risk-banner.high{border-color:rgba(232,93,93,.4)}.risk-banner.critical{border-color:rgba(232,93,93,.55);background:rgba(232,93,93,.08)}
+    .risk-score{font-family:"IBM Plex Mono",monospace;font-size:2rem;font-weight:600;line-height:1}
+    .risk-level{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:.3rem}
+    .risk-side{text-align:right;font-size:12px;color:var(--muted)}.risk-side strong{display:block;color:var(--text);font-size:14px;margin-bottom:.15rem}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}@media(max-width:640px){.split{grid-template-columns:1fr}}
+    .subpanel{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.85rem}
+    .subpanel h3{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.55rem;font-weight:600}
+    .bar-row{display:grid;grid-template-columns:64px 1fr 42px;gap:.4rem;align-items:center;margin-bottom:.35rem;font-size:12px}
+    .bar-row .lab{color:var(--muted);font-size:11px}
+    .track{height:6px;background:var(--bg);border-radius:99px;overflow:hidden}
+    .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--blue))}
+    .bar-row .pct{font-family:"IBM Plex Mono",monospace;text-align:right;font-size:11px}
+    .chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.5rem}
+    .chip{font-size:11px;font-family:"IBM Plex Mono",monospace;padding:.25rem .45rem;border-radius:5px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+    .chip.warn{color:var(--amber);border-color:rgba(230,184,77,.35)}
+    .actions-list{list-style:none}
+    .actions-list li{position:relative;padding:.45rem 0 .45rem 1rem;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+    .actions-list li:last-child{border-bottom:none}
+    .actions-list li::before{content:"";position:absolute;left:0;top:.7rem;width:5px;height:5px;border-radius:50%;background:var(--cyan)}
+    .summary-box{font-size:13px;color:var(--text);margin-bottom:.65rem;padding:.55rem .65rem;background:var(--bg);border-radius:6px;border-left:3px solid var(--cyan)}
+    .rationale{font-size:12px;color:var(--muted);margin-bottom:.35rem}
+    .sens-row{display:flex;align-items:center;gap:.75rem;margin:.75rem 0;flex-wrap:wrap}
+    .sens-row label{font-size:12px;color:var(--muted);min-width:90px}
+    .sens-row input[type=range]{flex:1;min-width:120px}
+    .sens-val{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--cyan);min-width:3ch}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{padding:.45rem .5rem;border-bottom:1px solid var(--line);text-align:left}
+    th{color:var(--muted);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+    .notice{margin-top:.5rem;padding:.75rem .9rem;border-radius:8px;border:1px solid var(--line);background:var(--panel);font-size:12px;color:var(--muted)}
+    .notice strong{color:var(--text)}
+    footer{margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--line);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem}
+    footer a{color:var(--cyan);text-decoration:none}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.55rem}
+    .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.7rem .75rem}
+    .kpi .v{font-family:"IBM Plex Mono",monospace;font-size:1.15rem;font-weight:600;color:var(--cyan)}
+    .kpi .l{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:.2rem}
+    .hidden{display:none}
+    .file-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.5rem 0}
+    input[type=file]{font-size:12px;color:var(--muted)}
   </style>
 </head>
 <body>
@@ -189,71 +90,119 @@
         <div class="logo">AG</div>
         <div>
           <h1>Aegis <span>Console</span></h1>
-          <div class="tag">Network flow triage · Analyst assist</div>
+          <div class="tag">Network flow triage · Analyst assist · v1.2</div>
         </div>
       </div>
       <div class="top-meta">
         <span class="pill" id="healthPill"><span class="dot"></span> checking</span>
-        <span class="pill">v1.1</span>
+        <span class="pill">v1.2</span>
       </div>
     </header>
 
-    <section class="hero">
-      <div class="panel hero-copy">
-        <h2>Product</h2>
-        <h3>Decision support for network security triage</h3>
-        <p>
-          Aegis scores network-flow style records with a hybrid pipeline:
-          unsupervised anomaly detection plus supervised attack-family classification.
-          Output is built for <strong>analysts</strong> — risk, confidence, rationale, and recommended next steps.
-          It does not auto-block traffic.
-        </p>
-        <ul>
-          <li><strong>Isolation Forest</strong> — deviation from benign baseline</li>
-          <li><strong>Random Forest</strong> — benign / probe / dos / r2l / u2r</li>
-          <li><strong>Fused risk</strong> — operational priority for the queue</li>
-        </ul>
+    <div class="tabs">
+      <button type="button" class="tab active" data-tab="triage">Triage</button>
+      <button type="button" class="tab" data-tab="batch">Batch CSV</button>
+      <button type="button" class="tab" data-tab="audit">Audit log</button>
+      <button type="button" class="tab" data-tab="card">Model card</button>
+    </div>
+
+    <div class="panel">
+      <h2>Sensitivity</h2>
+      <div class="sens-row">
+        <label>Alert posture</label>
+        <input type="range" id="sens" min="-1" max="1" step="0.05" value="0" />
+        <span class="sens-val" id="sensVal">0</span>
+        <span style="font-size:11px;color:var(--muted)">−1 fewer alerts · 0 default · +1 more alerts</span>
       </div>
-      <div class="panel">
-        <h2>Model card (held-out)</h2>
-        <div class="kpi-grid" id="kpis">
-          <div class="kpi"><div class="v">—</div><div class="l">IF ROC-AUC</div></div>
-          <div class="kpi"><div class="v">—</div><div class="l">RF ROC-AUC</div></div>
-          <div class="kpi"><div class="v">—</div><div class="l">Macro F1</div></div>
-          <div class="kpi"><div class="v">—</div><div class="l">Train rows</div></div>
+    </div>
+
+    <!-- TRIAGE -->
+    <section id="tab-triage">
+      <div class="main">
+        <aside class="panel">
+          <h2>Triage scenarios</h2>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem">Select a flow, then run triage.</p>
+          <div id="scenarios">Loading…</div>
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary" id="runBtn" disabled>Run triage</button>
+            <button type="button" class="btn" id="clearBtn">Clear</button>
+          </div>
+        </aside>
+        <div class="panel">
+          <h2>Triage result</h2>
+          <div id="result"><div class="empty">Select a scenario and run triage.</div></div>
         </div>
-        <p style="margin-top:0.7rem;font-size:11px;color:var(--muted)">
-          Metrics from the last train run. Synthetic training data — validate on your own labeled flows before production use.
-        </p>
       </div>
     </section>
 
-    <section class="main">
-      <aside class="panel">
-        <h2>Triage scenarios</h2>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem">
-          Select a representative flow. Scores illustrate the product workflow.
-        </p>
-        <div id="scenarios">Loading…</div>
-        <div class="btn-row">
-          <button type="button" class="btn btn-primary" id="runBtn" disabled>Run triage</button>
-          <button type="button" class="btn" id="clearBtn">Clear</button>
-        </div>
-      </aside>
+    <!-- BATCH -->
+    <section id="tab-batch" class="hidden">
       <div class="panel">
-        <h2>Triage result</h2>
-        <div id="result"><div class="empty">Select a scenario and run triage to produce an analyst packet.</div></div>
+        <h2>Batch CSV triage</h2>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:.5rem">
+          Upload a CSV with feature columns (see schema). Max 500 rows. Results can be exported.
+        </p>
+        <div class="file-row">
+          <input type="file" id="csvFile" accept=".csv" />
+          <button type="button" class="btn btn-primary" id="batchBtn">Score CSV</button>
+          <a class="btn" href="/api/sample-csv" download>Download sample CSV</a>
+          <button type="button" class="btn hidden" id="exportBtn">Export results CSV</button>
+        </div>
+        <div id="batchSummary" style="margin-top:.75rem;font-size:12px;color:var(--muted)"></div>
+        <div style="overflow-x:auto;margin-top:.75rem">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Class</th><th>Risk</th><th>Score</th><th>Disposition</th><th>Anomaly</th></tr>
+            </thead>
+            <tbody id="batchBody">
+              <tr><td colspan="6" class="empty">No batch results yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUDIT -->
+    <section id="tab-audit" class="hidden">
+      <div class="panel">
+        <h2>Session audit log</h2>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:.5rem">
+          In-memory log of triage events this session (cleared on service restart).
+        </p>
+        <div class="btn-row">
+          <button type="button" class="btn" id="refreshAudit">Refresh</button>
+          <button type="button" class="btn" id="clearAudit">Clear log</button>
+        </div>
+        <div style="overflow-x:auto;margin-top:.75rem">
+          <table>
+            <thead>
+              <tr><th>Time (UTC)</th><th>Source</th><th>Class</th><th>Risk</th><th>Score</th><th>Disposition</th></tr>
+            </thead>
+            <tbody id="auditBody">
+              <tr><td colspan="6" class="empty">No entries yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODEL CARD -->
+    <section id="tab-card" class="hidden">
+      <div class="panel">
+        <h2>Model card</h2>
+        <div class="kpi-grid" id="kpis" style="margin-bottom:1rem"></div>
+        <div id="modelCardBody" style="font-size:13px;color:var(--muted)"></div>
       </div>
     </section>
 
     <div class="notice">
       <strong>Operational boundary.</strong>
-      Aegis is decision support for authorized environments. Calibrate on your telemetry before relying on scores.
-      Unauthorized access to systems you do not own is illegal. Models can be wrong — corroborate with logs and asset context.
+      Aegis is decision support for authorized environments. Calibrate on your telemetry before production.
+      Unauthorized access to systems you do not own is illegal. Always corroborate with logs and asset context.
     </div>
 
     <footer>
-      <span>Aegis · Built for security operations workflows</span>
+      <span>Aegis Console v1.2 · Security operations workflows</span>
       <span>
         <a href="https://github.com/3Fr4nj35-3ku5h3/aegis-threat-detection" target="_blank" rel="noopener">Source</a>
         ·
@@ -261,128 +210,237 @@
       </span>
     </footer>
   </div>
-  <script>
-    let samples = [], selected = null;
-    const $ = (id) => document.getElementById(id);
 
-    async function init() {
-      try {
-        const h = await fetch('/api/health').then(r => r.json());
-        const pill = $('healthPill');
-        if (h.models_ready) {
-          pill.className = 'pill ok';
-          pill.innerHTML = '<span class="dot"></span> models online';
-        } else {
-          pill.className = 'pill bad';
-          pill.innerHTML = '<span class="dot"></span> models offline';
-        }
-      } catch {
-        $('healthPill').className = 'pill bad';
-        $('healthPill').innerHTML = '<span class="dot"></span> api offline';
-      }
-      try {
-        const m = await fetch('/api/metrics').then(r => r.json());
-        const iso = m.isolation_forest || {}, rf = m.random_forest || {};
-        $('kpis').innerHTML = `
-          <div class="kpi"><div class="v">${iso.roc_auc_attack ?? '—'}</div><div class="l">IF ROC-AUC</div></div>
-          <div class="kpi"><div class="v">${rf.roc_auc_attack ?? '—'}</div><div class="l">RF ROC-AUC</div></div>
-          <div class="kpi"><div class="v">${rf.macro_f1 ?? '—'}</div><div class="l">Macro F1</div></div>
-          <div class="kpi"><div class="v">${m.n_train ?? '—'}</div><div class="l">Train rows</div></div>`;
-      } catch {}
-      try {
-        samples = (await fetch('/api/demo-samples').then(r => r.json())).samples || [];
-        renderScenarios();
-      } catch { $('scenarios').textContent = 'Unable to load scenarios.'; }
-    }
+<script>
+let samples = [], selected = null, lastBatch = null;
+const $ = id => document.getElementById(id);
+const sens = () => parseFloat($('sens').value || 0);
 
-    function renderScenarios() {
-      $('scenarios').innerHTML = samples.map((s, i) => `
-        <button type="button" class="scenario" data-i="${i}">
-          <div class="name">${s.name}</div>
-          <div class="exp">expected · ${s.expected}</div>
-        </button>`).join('');
-      $('scenarios').querySelectorAll('.scenario').forEach(btn => {
-        btn.addEventListener('click', () => {
-          selected = samples[+btn.dataset.i];
-          $('scenarios').querySelectorAll('.scenario').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          $('runBtn').disabled = false;
-        });
-      });
-    }
+$('sens').addEventListener('input', () => { $('sensVal').textContent = sens().toFixed(2); });
 
-    $('runBtn').addEventListener('click', async () => {
-      if (!selected) return;
-      $('runBtn').disabled = true;
-      $('runBtn').textContent = 'Scoring…';
-      try {
-        const res = await fetch('/api/score/one', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ flow: selected.flow }),
-        }).then(r => r.json());
-        renderResult(res, selected);
-      } catch {
-        $('result').innerHTML = '<div class="empty">Triage failed. Check API health.</div>';
-      }
-      $('runBtn').disabled = false;
-      $('runBtn').textContent = 'Run triage';
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    ['triage','batch','audit','card'].forEach(name => {
+      const el = $('tab-' + name);
+      if (el) el.classList.toggle('hidden', btn.dataset.tab !== name);
     });
+    if (btn.dataset.tab === 'audit') loadAudit();
+    if (btn.dataset.tab === 'card') loadCard();
+  });
+});
 
-    $('clearBtn').addEventListener('click', () => {
-      selected = null;
-      $('runBtn').disabled = true;
+async function init() {
+  try {
+    const h = await fetch('/api/health').then(r => r.json());
+    const pill = $('healthPill');
+    if (h.models_ready) {
+      pill.className = 'pill ok';
+      pill.innerHTML = '<span class="dot"></span> models online';
+    } else {
+      pill.className = 'pill bad';
+      pill.innerHTML = '<span class="dot"></span> models offline';
+    }
+  } catch {
+    $('healthPill').className = 'pill bad';
+    $('healthPill').innerHTML = '<span class="dot"></span> api offline';
+  }
+  try {
+    samples = (await fetch('/api/demo-samples').then(r => r.json())).samples || [];
+    renderScenarios();
+  } catch {
+    $('scenarios').textContent = 'Unable to load scenarios.';
+  }
+}
+
+function renderScenarios() {
+  $('scenarios').innerHTML = samples.map((s, i) => `
+    <button type="button" class="scenario" data-i="${i}">
+      <div class="name">${s.name}</div>
+      <div class="exp">expected · ${s.expected}</div>
+    </button>`).join('');
+  $('scenarios').querySelectorAll('.scenario').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selected = samples[+btn.dataset.i];
       $('scenarios').querySelectorAll('.scenario').forEach(b => b.classList.remove('active'));
-      $('result').innerHTML = '<div class="empty">Select a scenario and run triage to produce an analyst packet.</div>';
+      btn.classList.add('active');
+      $('runBtn').disabled = false;
     });
+  });
+}
 
-    function renderResult(r, sample) {
-      const level = r.risk_level || 'low';
-      const a = r.analyst || {};
-      const probs = r.class_probabilities || {};
-      const bars = Object.entries(probs).sort((x,y) => y[1]-x[1]).map(([k,v]) => `
-        <div class="bar-row">
-          <span class="lab">${k}</span>
-          <div class="track"><div class="fill" style="width:${(v*100).toFixed(1)}%"></div></div>
-          <span class="pct">${(v*100).toFixed(0)}%</span>
-        </div>`).join('');
-      const actions = (a.recommended_actions || []).map(t => `<li>${t}</li>`).join('');
-      const rationale = (a.rationale || []).map(t => `<div class="rationale">• ${t}</div>`).join('');
-      $('result').innerHTML = `
-        <div class="risk-banner ${level}">
-          <div>
-            <div class="risk-score">${Math.round((r.risk_score||0)*100)}</div>
-            <div class="risk-level">${level} risk</div>
-          </div>
-          <div class="risk-side">
-            <strong>${r.predicted_class}</strong>
-            disposition · ${a.disposition || '—'}<br/>
-            priority · ${a.priority || '—'}<br/>
-            scenario · ${sample.name}
-          </div>
+$('runBtn').addEventListener('click', async () => {
+  if (!selected) return;
+  $('runBtn').disabled = true;
+  $('runBtn').textContent = 'Scoring…';
+  try {
+    const res = await fetch('/api/score/one', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ flow: selected.flow, sensitivity: sens(), source: 'console' }),
+    }).then(r => r.json());
+    renderResult(res, selected);
+  } catch {
+    $('result').innerHTML = '<div class="empty">Triage failed. Check API health.</div>';
+  }
+  $('runBtn').disabled = false;
+  $('runBtn').textContent = 'Run triage';
+});
+
+$('clearBtn').addEventListener('click', () => {
+  selected = null;
+  $('runBtn').disabled = true;
+  $('scenarios').querySelectorAll('.scenario').forEach(b => b.classList.remove('active'));
+  $('result').innerHTML = '<div class="empty">Select a scenario and run triage.</div>';
+});
+
+function renderResult(r, sample) {
+  const level = r.risk_level || 'low';
+  const a = r.analyst || {};
+  const probs = r.class_probabilities || {};
+  const bars = Object.entries(probs).sort((x,y) => y[1]-x[1]).map(([k,v]) => `
+    <div class="bar-row">
+      <span class="lab">${k}</span>
+      <div class="track"><div class="fill" style="width:${(v*100).toFixed(1)}%"></div></div>
+      <span class="pct">${(v*100).toFixed(0)}%</span>
+    </div>`).join('');
+  const actions = (a.recommended_actions || []).map(t => `<li>${t}</li>`).join('');
+  const rationale = (a.rationale || []).map(t => `<div class="rationale">• ${t}</div>`).join('');
+  $('result').innerHTML = `
+    <div class="risk-banner ${level}">
+      <div>
+        <div class="risk-score">${Math.round((r.risk_score||0)*100)}</div>
+        <div class="risk-level">${level} risk</div>
+      </div>
+      <div class="risk-side">
+        <strong>${r.predicted_class}</strong>
+        disposition · ${a.disposition || '—'}<br/>
+        priority · ${a.priority || '—'}<br/>
+        scenario · ${sample.name}
+      </div>
+    </div>
+    <div class="split">
+      <div class="subpanel">
+        <h3>Class probabilities</h3>
+        ${bars}
+        <div class="chips">
+          <span class="chip ${r.anomaly_flag ? 'warn' : ''}">anomaly ${r.anomaly_flag ? 'flagged' : 'clear'}</span>
+          <span class="chip">attack p ${((r.attack_probability||0)*100).toFixed(0)}%</span>
+          <span class="chip">sens ${sens().toFixed(2)}</span>
         </div>
-        <div class="split">
-          <div class="subpanel">
-            <h3>Class probabilities</h3>
-            ${bars}
-            <div class="chips">
-              <span class="chip ${r.anomaly_flag ? 'warn' : ''}">anomaly ${r.anomaly_flag ? 'flagged' : 'clear'}</span>
-              <span class="chip">attack p ${((r.attack_probability||0)*100).toFixed(0)}%</span>
-              <span class="chip">expected ${sample.expected}</span>
-            </div>
-          </div>
-          <div class="subpanel">
-            <h3>Analyst summary</h3>
-            <div class="summary-box">${a.summary || 'No summary'}</div>
-            ${rationale}
-          </div>
-        </div>
-        <div class="subpanel" style="margin-top:0.85rem">
-          <h3>Recommended actions</h3>
-          <ul class="actions-list">${actions || '<li>No actions listed</li>'}</ul>
-        </div>`;
-    }
-    init();
-  </script>
+      </div>
+      <div class="subpanel">
+        <h3>Analyst summary</h3>
+        <div class="summary-box">${a.summary || 'No summary'}</div>
+        ${rationale}
+      </div>
+    </div>
+    <div class="subpanel" style="margin-top:.85rem">
+      <h3>Recommended actions</h3>
+      <ul class="actions-list">${actions || '<li>No actions listed</li>'}</ul>
+    </div>`;
+}
+
+$('batchBtn').addEventListener('click', async () => {
+  const f = $('csvFile').files[0];
+  if (!f) { alert('Choose a CSV file first'); return; }
+  const fd = new FormData();
+  fd.append('file', f);
+  $('batchBtn').disabled = true;
+  $('batchBtn').textContent = 'Scoring…';
+  try {
+    const res = await fetch('/api/score/csv?sensitivity=' + encodeURIComponent(sens()), {
+      method: 'POST', body: fd,
+    }).then(r => r.json());
+    if (res.detail) throw new Error(JSON.stringify(res.detail));
+    lastBatch = res;
+    const s = res.summary || {};
+    $('batchSummary').textContent =
+      `Batch ${res.batch_id} · ${res.count} rows · levels ${JSON.stringify(s.risk_levels||{})} · classes ${JSON.stringify(s.classes||{})}`;
+    $('batchBody').innerHTML = (res.results || []).map((r, i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td>${r.predicted_class}</td>
+        <td>${r.risk_level}</td>
+        <td>${r.risk_score}</td>
+        <td>${(r.analyst||{}).disposition||'—'}</td>
+        <td>${r.anomaly_flag ? 'flagged' : 'clear'}</td>
+      </tr>`).join('') || '<tr><td colspan="6">Empty</td></tr>';
+    $('exportBtn').classList.remove('hidden');
+  } catch (e) {
+    $('batchSummary').textContent = 'Batch failed: ' + e.message;
+  }
+  $('batchBtn').disabled = false;
+  $('batchBtn').textContent = 'Score CSV';
+});
+
+$('exportBtn').addEventListener('click', () => {
+  if (!lastBatch || !lastBatch.results) return;
+  const rows = [['row','predicted_class','risk_level','risk_score','disposition','anomaly_flag','attack_probability']];
+  lastBatch.results.forEach((r, i) => {
+    rows.push([
+      i+1, r.predicted_class, r.risk_level, r.risk_score,
+      (r.analyst||{}).disposition||'', r.anomaly_flag, r.attack_probability
+    ]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `aegis_batch_${lastBatch.batch_id||'out'}.csv`;
+  a.click();
+});
+
+async function loadAudit() {
+  try {
+    const data = await fetch('/api/audit?limit=100').then(r => r.json());
+    const entries = data.entries || [];
+    $('auditBody').innerHTML = entries.length ? entries.map(e => `
+      <tr>
+        <td>${e.ts||''}</td>
+        <td>${e.source||''}</td>
+        <td>${e.predicted_class||''}</td>
+        <td>${e.risk_level||''}</td>
+        <td>${e.risk_score??''}</td>
+        <td>${e.disposition||''}</td>
+      </tr>`).join('') : '<tr><td colspan="6" class="empty">No entries yet.</td></tr>';
+  } catch {
+    $('auditBody').innerHTML = '<tr><td colspan="6">Failed to load audit log.</td></tr>';
+  }
+}
+$('refreshAudit').addEventListener('click', loadAudit);
+$('clearAudit').addEventListener('click', async () => {
+  await fetch('/api/audit', { method: 'DELETE' });
+  loadAudit();
+});
+
+async function loadCard() {
+  try {
+    const c = await fetch('/api/model-card').then(r => r.json());
+    const m = c.metrics || {};
+    const iso = m.isolation_forest || {};
+    const rf = m.random_forest || {};
+    $('kpis').innerHTML = `
+      <div class="kpi"><div class="v">${iso.roc_auc_attack??'—'}</div><div class="l">IF ROC-AUC</div></div>
+      <div class="kpi"><div class="v">${rf.roc_auc_attack??'—'}</div><div class="l">RF ROC-AUC</div></div>
+      <div class="kpi"><div class="v">${rf.macro_f1??'—'}</div><div class="l">Macro F1</div></div>
+      <div class="kpi"><div class="v">${m.n_train??'—'}</div><div class="l">Train rows</div></div>`;
+    $('modelCardBody').innerHTML = `
+      <p style="margin-bottom:.6rem"><strong style="color:var(--text)">${c.name}</strong> · ${c.version}</p>
+      <p style="margin-bottom:.6rem">${c.purpose}</p>
+      <p style="margin-bottom:.35rem"><strong style="color:var(--text)">Pipeline</strong></p>
+      <ul style="margin:0 0 .75rem 1.1rem">${(c.pipeline||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
+      <p style="margin-bottom:.35rem"><strong style="color:var(--text)">Training data</strong></p>
+      <p style="margin-bottom:.75rem">${(c.training_data||{}).type}. ${(c.training_data||{}).limitation}</p>
+      <p style="margin-bottom:.35rem"><strong style="color:var(--text)">Not for</strong></p>
+      <ul style="margin:0 0 .5rem 1.1rem">${(c.not_for||[]).map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  } catch {
+    $('modelCardBody').textContent = 'Could not load model card.';
+  }
+}
+
+init();
+</script>
 </body>
 </html>
